@@ -15,38 +15,37 @@ const allowedOrigins = (process.env.CORS_ORIGIN || process.env.BETTER_AUTH_TRUST
   ? (process.env.CORS_ORIGIN || process.env.BETTER_AUTH_TRUSTED_ORIGINS)!.split(",").map((o) => o.trim())
   : ["http://localhost:3000", "http://127.0.0.1:3000"];
 
-async function init() {
-  try {
-    // const result = await db();
-    // console.log("databe status", result);
+const app: Express = express();
 
-    const app: Express = express();
-    app.use(
-      cors({
-        origin: allowedOrigins,
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-      })
-    );
-    const port = Number(process.env.PORT) || 3001;
-    app.all("/api/auth/*splat", toNodeHandler(auth));
-    app.get("/", (req, res) => {
-      res.status(200).json({
-        message: "tk backend running",
-      });
-    });
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  })
+);
 
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
-    // app.use("/api", router);
-    // docs(app);
-    app.listen(port, () => {
-      console.log(`Example app listening on port di ${port}`);
-    });
-  } catch (error) {
-    console.log(error);
-  }
+// Better Auth route handler (mounted before express.json)
+app.all("/api/auth/*splat", toNodeHandler(auth));
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "tk backend running",
+  });
+});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// app.use("/api", router);
+// docs(app);
+
+// Jalankan app.listen hanya di environment lokal (bukan Vercel Serverless)
+if (!process.env.VERCEL) {
+  const port = Number(process.env.PORT) || 3001;
+  app.listen(port, () => {
+    console.log(`Backend server running on http://localhost:${port}`);
+  });
 }
 
-init();
+export default app;
